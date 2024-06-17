@@ -123,7 +123,7 @@ func sendLink(ctx *ext.Context, u *ext.Update) error {
 		ctx.Reply(u, fmt.Sprintf("Error - %s", err.Error()), nil)
 	}
 
-	err = sendDownloadLink(link)
+	err = sendDownloadLink(link, file.FileName)
 	if err != nil {
 		utils.Logger.Sugar().Errorf("Error sending download link to server: %v", err)
 	}
@@ -131,7 +131,7 @@ func sendLink(ctx *ext.Context, u *ext.Update) error {
 	return dispatcher.EndGroups
 }
 
-func sendDownloadLink(downloadLink string) error {
+func sendDownloadLink(downloadLink, fileName string) error {
 	url := os.Getenv("DOWNLOAD_LINK_ENDPOINT")
 	if url == "" {
 		return fmt.Errorf("DOWNLOAD_LINK_ENDPOINT environment variable not set")
@@ -139,8 +139,9 @@ func sendDownloadLink(downloadLink string) error {
 
 	// Create JSON payload
 	data := map[string]string{
-		"download_link": downloadLink,
-	}
+	        "download_link": downloadLink,
+	        "file_name":     fileName,
+    	}
 
 	payload, err := json.Marshal(data)
 	if err != nil {
