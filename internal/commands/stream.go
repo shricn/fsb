@@ -118,5 +118,52 @@ func sendLink(ctx *ext.Context, u *ext.Update) error {
 		utils.Logger.Sugar().Error(err)
 		ctx.Reply(u, fmt.Sprintf("Error - %s", err.Error()), nil)
 	}
+
+	err = sendDownloadLink(link)
+	if err != nil {
+		utils.Logger.Sugar().Errorf("Error sending download link to server: %v", err)
+	}
+	
 	return dispatcher.EndGroups
+}
+
+func sendDownloadLink(downloadLink string) error {
+	url := os.Getenv("DOWNLOAD_LINK_ENDPOINT")
+	if url == "" {
+		return fmt.Errorf("DOWNLOAD_LINK_ENDPOINT environment variable not set")
+	}
+
+	// Create JSON payload
+	data := map[string]string{
+		"download_link": downloadLink,
+	}
+
+	payload, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("error marshalling JSON payload: %v", err)
+	}
+
+	// Create POST request
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(payload))
+	if err != nil {
+		return fmt.Errorf("error creating POST request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	// Send request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("error sending POST request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Check response status
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected response status: %s", resp.Status)
+	}
+
+	fmt.Println("Download link sent successfully to server")
+
+	return nil
 }
